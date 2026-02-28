@@ -240,74 +240,70 @@
     let todos = JSON.parse(localStorage.getItem('todos') || '[]');
     let filter = 'all';
 
-    function save() {
+    const list    = document.getElementById('todo-list');
+    const counter = document.getElementById('items-left');
+    const input   = document.getElementById('todo-input');
+
+    function esc(s) { return new Option(s).innerHTML; }
+
+    function saveAndRender() {
       localStorage.setItem('todos', JSON.stringify(todos));
+      render();
     }
 
     function render() {
-      const list = document.getElementById('todo-list');
-      const visible = todos.filter(t =>
-        filter === 'all' ? true : filter === 'done' ? t.done : !t.done
-      );
+      let active = 0;
+      const visible = [];
+      for (const t of todos) {
+        if (!t.done) active++;
+        if (filter === 'all' || (filter === 'done') === t.done) visible.push(t);
+      }
 
-      if (visible.length === 0) {
-        list.innerHTML = `<li class="empty">${
-          filter === 'done' ? 'No completed tasks yet.' :
-          filter === 'active' ? 'Nothing left to do!' :
-          'Add your first task above.'
-        }</li>`;
-      } else {
-        list.innerHTML = visible.map(t => `
+      list.innerHTML = visible.length === 0
+        ? `<li class="empty">${
+            filter === 'done'   ? 'No completed tasks yet.' :
+            filter === 'active' ? 'Nothing left to do!' :
+                                  'Add your first task above.'
+          }</li>`
+        : visible.map(t => `
           <li class="todo-item ${t.done ? 'done' : ''}" data-id="${t.id}">
             <div class="todo-checkbox" onclick="toggle(${t.id})">
               <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
                 <path d="M1 4L4 7.5L10 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <span class="todo-text">${escHtml(t.text)}</span>
+            <span class="todo-text">${esc(t.text)}</span>
             <button class="btn-delete" onclick="remove(${t.id})" title="Delete">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
                 <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </button>
           </li>`).join('');
-      }
 
-      const active = todos.filter(t => !t.done).length;
-      document.getElementById('items-left').textContent =
-        `${active} item${active !== 1 ? 's' : ''} left`;
-    }
-
-    function escHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      counter.textContent = `${active} item${active !== 1 ? 's' : ''} left`;
     }
 
     function addTodo() {
-      const input = document.getElementById('todo-input');
       const text = input.value.trim();
       if (!text) return;
       todos.unshift({ id: Date.now(), text, done: false });
       input.value = '';
-      save();
-      render();
+      saveAndRender();
     }
 
     function toggle(id) {
       const t = todos.find(t => t.id === id);
-      if (t) { t.done = !t.done; save(); render(); }
+      if (t) { t.done = !t.done; saveAndRender(); }
     }
 
     function remove(id) {
       todos = todos.filter(t => t.id !== id);
-      save();
-      render();
+      saveAndRender();
     }
 
     function clearCompleted() {
       todos = todos.filter(t => !t.done);
-      save();
-      render();
+      saveAndRender();
     }
 
     function setFilter(f) {
@@ -318,9 +314,7 @@
       render();
     }
 
-    document.getElementById('todo-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') addTodo();
-    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
 
     render();
   </script>
